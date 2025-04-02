@@ -84,7 +84,7 @@
 #endif
 
 #define AOT_MAGIC_NUMBER 0x746f6100
-#define AOT_CURRENT_VERSION 3
+#define AOT_CURRENT_VERSION 4
 
 #ifndef WASM_ENABLE_JIT
 #define WASM_ENABLE_JIT 0
@@ -191,6 +191,10 @@
 #elif WASM_ENABLE_HEAP_AUX_STACK_ALLOCATION == 0 \
     && WASM_ENABLE_LIB_WASI_THREADS == 1
 #error "Heap aux stack allocation must be enabled for WASI threads"
+#endif
+
+#ifndef WAMR_ENABLE_COPY_CALLSTACK
+#define WAMR_ENABLE_COPY_CALLSTACK 0
 #endif
 
 #ifndef WASM_ENABLE_BASE_LIB
@@ -316,6 +320,12 @@
 /* Disable SIMD unless it is manually enabled somewhere */
 #ifndef WASM_ENABLE_SIMD
 #define WASM_ENABLE_SIMD 0
+#endif
+
+/* Disable SIMDe (used in the fast interpreter for SIMD opcodes)
+unless used elsewhere */
+#ifndef WASM_ENABLE_SIMDE
+#define WASM_ENABLE_SIMDE 0
 #endif
 
 /* GC performance profiling */
@@ -696,6 +706,14 @@
 
 #ifndef WASM_ENABLE_SHARED_HEAP
 #define WASM_ENABLE_SHARED_HEAP 0
+#endif
+
+#ifndef WASM_ENABLE_SHRUNK_MEMORY
+#define WASM_ENABLE_SHRUNK_MEMORY 1
+#endif
+
+#ifndef WASM_ENABLE_AOT_VALIDATOR
+#define WASM_ENABLE_AOT_VALIDATOR 0
 #endif
 
 #endif /* end of _CONFIG_H_ */
