@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
 cmake_minimum_required (VERSION 3.14)
-
 option(BUILD_SHARED_LIBS "Build using shared libraries" OFF)
 
 if(ESP_PLATFORM)
