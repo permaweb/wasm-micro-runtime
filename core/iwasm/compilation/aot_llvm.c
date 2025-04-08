@@ -4058,36 +4058,29 @@ aot_load_const_from_table(AOTCompContext *comp_ctx, LLVMValueRef base,
     return const_value;
 }
 
+// Canonical NaNs in WASM have their most significant bit set to 1
+const unsigned long long CANONICAL_NAN_POSITIVE_F32 = 0x7FC00000;
+const unsigned long long CANONICAL_NAN_POSITIVE_F64 = 0x7FF8000000000000ULL;
+const unsigned long long CANONICAL_NAN_NEGATIVE_F32 = 0xFFC00000;
+const unsigned long long CANONICAL_NAN_NEGATIVE_F64 = 0xFFF8000000000000ULL;
+
 LLVMValueRef
 aot_canonicalize_nan(AOTCompContext *comp_ctx, AOTFuncContext *func_ctx, LLVMValueRef float_val, bool is_f32)
 {
-    LLVMTypeRef int_type = is_f32 ? LLVMInt32Type() : LLVMInt64Type();
+    LLVMTypeRef int_type = is_f32 ? I32_TYPE : I64_TYPE;
     LLVMTypeRef ret_type = is_f32 ? F32_TYPE : F64_TYPE;
+    unsigned long long nan_bits = comp_ctx->nan_canonicalization_sign_bit_negative
+        ? (is_f32 ? CANONICAL_NAN_NEGATIVE_F32 : CANONICAL_NAN_NEGATIVE_F64)
+        : (is_f32 ? CANONICAL_NAN_POSITIVE_F32 : CANONICAL_NAN_POSITIVE_F64);
 
     /* Check if the returned value is NaN.
        The comparison 'ret' with itself using LLVMRealUNO returns true if ret is NaN. */
     LLVMValueRef is_nan = LLVMBuildFCmp(comp_ctx->builder, LLVMRealUNO, float_val, float_val, "is_nan");
 
-    /* Bitcast ret to an integer type so we can manipulate the sign bit.
-       For f32 use 32-bit integer type; for f64 use 64-bit integer type. */
-    LLVMValueRef int_val = LLVMBuildBitCast(comp_ctx->builder, float_val, int_type, "int_val");
-
-    LLVMValueRef canon_int;
-    if (comp_ctx->nan_canonicalization_sign_bit_negative) {
-        /* Create a constant with only the sign bit set */
-        LLVMValueRef sign_mask = LLVMConstInt(int_type, is_f32 ? 0x80000000 : 0x8000000000000000ULL, 0);
-
-        /* Set the sign bit by OR-ing the integer representation with the sign mask */
-        canon_int = LLVMBuildOr(comp_ctx->builder, int_val, sign_mask, "canon_int");
-    } else {
-        /* Create a constant with every bit set except the sign bit set */
-        LLVMValueRef non_sign_mask = LLVMConstInt(int_type, is_f32 ? 0x7FFFFFFF : 0x7FFFFFFFFFFFFFFFULL, 0);
-
-        /* Set the sign bit by AND-ing the integer representation with the non-sign mask */
-        canon_int = LLVMBuildAnd(comp_ctx->builder, int_val, non_sign_mask, "canon_int");
-    }
-
-    /* Bitcast the modified integer back to the original floating-point type */
+    /* Create a Canonical NaN from raw bits */
+    LLVMValueRef canon_int = LLVMConstInt(int_type, nan_bits, 0);
+    
+    /* Cast the bits to a floating point type */
     LLVMValueRef canon_float = LLVMBuildBitCast(comp_ctx->builder, canon_int, ret_type, "canon_float");
 
     /* Use a select instruction to choose canon_float if ret was NaN, otherwise leave ret unchanged */
