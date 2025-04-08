@@ -8,6 +8,7 @@
 #include "aot_emit_numberic.h"
 #include "../aot/aot_intrinsic.h"
 #include "../aot/aot_runtime.h"
+#include "aot_llvm.h"
 
 static LLVMValueRef
 call_fcmp_intrinsic(AOTCompContext *comp_ctx, AOTFuncContext *func_ctx,
@@ -752,6 +753,10 @@ aot_compile_op_f32_demote_f64(AOTCompContext *comp_ctx,
         return false;
     }
 
+    if (comp_ctx->enable_nan_canonicalization) {
+        res = aot_canonicalize_nan(comp_ctx, func_ctx, res, true);
+    }
+
     PUSH_F32(res);
     return true;
 fail:
@@ -859,6 +864,10 @@ aot_compile_op_f64_promote_f32(AOTCompContext *comp_ctx,
     if (!res) {
         aot_set_last_error("llvm build conversion failed.");
         return false;
+    }
+
+    if (comp_ctx->enable_nan_canonicalization) {
+        res = aot_canonicalize_nan(comp_ctx, func_ctx, res, false);
     }
 
     PUSH_F64(res);

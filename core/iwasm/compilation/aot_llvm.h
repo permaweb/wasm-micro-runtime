@@ -472,6 +472,10 @@ typedef struct AOTCompContext {
 
     bool enable_shared_heap;
 
+    bool enable_nan_canonicalization;
+
+    bool nan_canonicalization_sign_bit_negative;
+
     uint32 opt_level;
     uint32 size_level;
 
@@ -617,6 +621,9 @@ aot_get_func_from_table(const AOTCompContext *comp_ctx, LLVMValueRef base,
 LLVMValueRef
 aot_load_const_from_table(AOTCompContext *comp_ctx, LLVMValueRef base,
                           const WASMValue *value, uint8 value_type);
+
+LLVMValueRef
+aot_canonicalize_nan(AOTCompContext *comp_ctx, AOTFuncContext *func_ctx, LLVMValueRef value, bool is_f32);
 
 bool
 aot_check_simd_compatibility(const char *arch_c_str, const char *cpu_c_str);

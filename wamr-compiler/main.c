@@ -207,6 +207,14 @@ print_help()
 #endif
     printf("  --mllvm=<option>          Add the LLVM command line option\n");
     printf("  --enable-shared-heap      Enable shared heap feature\n");
+    printf("  --enable-nan-canonicalization\n");
+    printf("                            Force the sign bit of NaNs emitted from floating-point arithmetic operations\n");
+    printf("                            to be consistent between platforms.\n");
+    printf("  --nan-canonicalization-sign-bit=1/0\n");
+    printf("                            Set the sign bit of canonicalized NaNs (default is 0)\n");
+    printf("                            0 - positive\n");
+    printf("                            1 - negative\n");
+    printf("                            This option only takes effect when --enable-nan-canonicalization is set.\n");
     printf("  -v=n                      Set log verbose level (0 to 5, default is 2), larger with more log\n");
     printf("  --version                 Show version information\n");
     printf("Examples: wamrc -o test.aot test.wasm\n");
@@ -650,6 +658,12 @@ main(int argc, char *argv[])
         }
         else if (!strcmp(argv[0], "--enable-shared-heap")) {
             option.enable_shared_heap = true;
+        }
+        else if (!strcmp(argv[0], "--enable-nan-canonicalization")) {
+            option.enable_nan_canonicalization = true;
+        }
+        else if (!strncmp(argv[0], "--nan-canonicalization-sign-bit=", 32)) {
+            option.nan_canonicalization_sign_bit = atoi(argv[0] + 32) == 1 ? 1 : 0;
         }
         else if (!strcmp(argv[0], "--version")) {
             uint32 major, minor, patch;
