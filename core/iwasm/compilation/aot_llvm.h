@@ -623,6 +623,9 @@ aot_load_const_from_table(AOTCompContext *comp_ctx, LLVMValueRef base,
                           const WASMValue *value, uint8 value_type);
 
 LLVMValueRef
+aot_canonicalize_nan_to_int(AOTCompContext *comp_ctx, AOTFuncContext *func_ctx, LLVMValueRef value, bool is_f32);
+
+LLVMValueRef
 aot_canonicalize_nan(AOTCompContext *comp_ctx, AOTFuncContext *func_ctx, LLVMValueRef value, bool is_f32);
 
 bool

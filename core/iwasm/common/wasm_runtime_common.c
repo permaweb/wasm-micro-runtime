@@ -2665,6 +2665,12 @@ parse_args_to_uint32_array(WASMFuncType *type, wasm_val_t *args,
     }
 }
 
+// Canonical NaNs in WASM have their most significant bit set to 1
+static const unsigned long long CANONICAL_NAN_POSITIVE_F32 = 0x7FC00000;
+static const unsigned long long CANONICAL_NAN_POSITIVE_F64 = 0x7FF8000000000000ULL;
+static const unsigned long long CANONICAL_NAN_NEGATIVE_F32 = 0xFFC00000;
+static const unsigned long long CANONICAL_NAN_NEGATIVE_F64 = 0xFFF8000000000000ULL;
+
 static void
 parse_uint32_array_to_results(WASMFuncType *type, uint32 *argv,
                               wasm_val_t *out_results)
@@ -2698,6 +2704,9 @@ parse_uint32_array_to_results(WASMFuncType *type, uint32 *argv,
                 u.part = argv[p++];
                 out_results[i].kind = WASM_F32;
                 out_results[i].of.f32 = u.val;
+                if (u.val != u.val) { //  is NaN
+                    out_results[i].of.i32 = CANONICAL_NAN_POSITIVE_F32;
+                }
                 break;
             }
             case VALUE_TYPE_F64:
@@ -2710,6 +2719,9 @@ parse_uint32_array_to_results(WASMFuncType *type, uint32 *argv,
                 u.parts[1] = argv[p++];
                 out_results[i].kind = WASM_F64;
                 out_results[i].of.f64 = u.val;
+                if (u.val != u.val) { // is NaN
+                    out_results[i].of.i64 = CANONICAL_NAN_POSITIVE_F64;
+                }
                 break;
             }
             case VALUE_TYPE_V128:

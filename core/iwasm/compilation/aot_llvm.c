@@ -4059,10 +4059,34 @@ aot_load_const_from_table(AOTCompContext *comp_ctx, LLVMValueRef base,
 }
 
 // Canonical NaNs in WASM have their most significant bit set to 1
-const unsigned long long CANONICAL_NAN_POSITIVE_F32 = 0x7FC00000;
-const unsigned long long CANONICAL_NAN_POSITIVE_F64 = 0x7FF8000000000000ULL;
-const unsigned long long CANONICAL_NAN_NEGATIVE_F32 = 0xFFC00000;
-const unsigned long long CANONICAL_NAN_NEGATIVE_F64 = 0xFFF8000000000000ULL;
+static const unsigned long long CANONICAL_NAN_POSITIVE_F32 = 0x7FC00000;
+static const unsigned long long CANONICAL_NAN_POSITIVE_F64 = 0x7FF8000000000000ULL;
+static const unsigned long long CANONICAL_NAN_NEGATIVE_F32 = 0xFFC00000;
+static const unsigned long long CANONICAL_NAN_NEGATIVE_F64 = 0xFFF8000000000000ULL;
+
+LLVMValueRef
+aot_canonicalize_nan_to_int(AOTCompContext *comp_ctx, AOTFuncContext *func_ctx, LLVMValueRef float_val, bool is_f32)
+{
+    LLVMTypeRef int_type = is_f32 ? I32_TYPE : I64_TYPE;
+    unsigned long long nan_bits = comp_ctx->nan_canonicalization_sign_bit_negative
+        ? (is_f32 ? CANONICAL_NAN_NEGATIVE_F32 : CANONICAL_NAN_NEGATIVE_F64)
+        : (is_f32 ? CANONICAL_NAN_POSITIVE_F32 : CANONICAL_NAN_POSITIVE_F64);
+
+    /* Check if the returned value is NaN.
+       The comparison 'ret' with itself using LLVMRealUNO returns true if ret is NaN. */
+    LLVMValueRef is_nan = LLVMBuildFCmp(comp_ctx->builder, LLVMRealUNO, float_val, float_val, "is_nan");
+
+    /* Cast the float to an int directly */
+    LLVMValueRef float_as_int = LLVMBuildFPToSI(comp_ctx->builder, float_val, int_type, "float_as_int");
+
+    /* Create a Canonical NaN from raw bits */
+    LLVMValueRef canon_int = LLVMConstInt(int_type, nan_bits, 0);
+    
+    /* Use a select instruction to choose canon_int if float_val was NaN, otherwise float_as_int */
+    LLVMValueRef final_val = LLVMBuildSelect(comp_ctx->builder, is_nan, canon_int, float_as_int, "final_val");
+
+    return final_val;
+}
 
 LLVMValueRef
 aot_canonicalize_nan(AOTCompContext *comp_ctx, AOTFuncContext *func_ctx, LLVMValueRef float_val, bool is_f32)
@@ -4073,8 +4097,8 @@ aot_canonicalize_nan(AOTCompContext *comp_ctx, AOTFuncContext *func_ctx, LLVMVal
         ? (is_f32 ? CANONICAL_NAN_NEGATIVE_F32 : CANONICAL_NAN_NEGATIVE_F64)
         : (is_f32 ? CANONICAL_NAN_POSITIVE_F32 : CANONICAL_NAN_POSITIVE_F64);
 
-    /* Check if the returned value is NaN.
-       The comparison 'ret' with itself using LLVMRealUNO returns true if ret is NaN. */
+    /* Check if the float value is NaN.
+       The comparison 'float_val' with itself using LLVMRealUNO returns true only if float_val is NaN. */
     LLVMValueRef is_nan = LLVMBuildFCmp(comp_ctx->builder, LLVMRealUNO, float_val, float_val, "is_nan");
 
     /* Create a Canonical NaN from raw bits */

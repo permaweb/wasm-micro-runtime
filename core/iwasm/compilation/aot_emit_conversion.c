@@ -876,11 +876,17 @@ aot_compile_op_i64_reinterpret_f64(AOTCompContext *comp_ctx,
 {
     LLVMValueRef value;
     POP_F64(value);
-    if (!(value =
-              LLVMBuildBitCast(comp_ctx->builder, value, I64_TYPE, "i64"))) {
-        aot_set_last_error("llvm build fp to si failed.");
-        return false;
+
+    if (comp_ctx->enable_nan_canonicalization) {
+        value = aot_canonicalize_nan_to_int(comp_ctx, func_ctx, value, false);
+    } else {
+        if (!(value =
+                LLVMBuildBitCast(comp_ctx->builder, value, I64_TYPE, "i64"))) {
+            aot_set_last_error("llvm build fp to si failed.");
+            return false;
+        }
     }
+
     PUSH_I64(value);
     return true;
 fail:
@@ -893,11 +899,17 @@ aot_compile_op_i32_reinterpret_f32(AOTCompContext *comp_ctx,
 {
     LLVMValueRef value;
     POP_F32(value);
-    if (!(value =
-              LLVMBuildBitCast(comp_ctx->builder, value, I32_TYPE, "i32"))) {
-        aot_set_last_error("llvm build fp to si failed.");
-        return false;
+
+    if (comp_ctx->enable_nan_canonicalization) {
+        value = aot_canonicalize_nan_to_int(comp_ctx, func_ctx, value, true);
+    } else {
+        if (!(value =
+                LLVMBuildBitCast(comp_ctx->builder, value, I32_TYPE, "i32"))) {
+            aot_set_last_error("llvm build fp to si failed.");
+            return false;
+        }
     }
+
     PUSH_I32(value);
     return true;
 fail:

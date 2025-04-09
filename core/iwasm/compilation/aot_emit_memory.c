@@ -9,6 +9,7 @@
 #include "../aot/aot_runtime.h"
 #include "aot_intrinsic.h"
 #include "aot_emit_control.h"
+#include "aot_llvm.h"
 
 #define BUILD_ICMP(op, left, right, res, name)                                \
     do {                                                                      \
@@ -957,6 +958,10 @@ aot_compile_op_f32_store(AOTCompContext *comp_ctx, AOTFuncContext *func_ctx,
 
     POP_F32(value);
 
+    if (comp_ctx->enable_nan_canonicalization) {
+        value = aot_canonicalize_nan(comp_ctx, NULL, value, true);
+    }
+
     unsigned int known_align;
     if (!(maddr = aot_check_memory_overflow(comp_ctx, func_ctx, offset, 4,
                                             enable_segue, &known_align)))
@@ -980,6 +985,10 @@ aot_compile_op_f64_store(AOTCompContext *comp_ctx, AOTFuncContext *func_ctx,
     bool enable_segue = comp_ctx->enable_segue_f64_store;
 
     POP_F64(value);
+
+    if (comp_ctx->enable_nan_canonicalization) {
+        value = aot_canonicalize_nan(comp_ctx, NULL, value, false);
+    }
 
     unsigned int known_align;
     if (!(maddr = aot_check_memory_overflow(comp_ctx, func_ctx, offset, 8,
