@@ -45,6 +45,11 @@ simd_v128_float_arith(AOTCompContext *comp_ctx, AOTFuncContext *func_ctx,
         return false;
     }
 
+    if (comp_ctx->enable_nan_canonicalization) {
+        result = aot_canonicalize_nan_simd(comp_ctx, func_ctx, result,
+                                           vector_type == V128_f32x4_TYPE);
+    }
+
     return simd_bitcast_and_push_v128(comp_ctx, func_ctx, result, "result");
 }
 
@@ -95,7 +100,8 @@ aot_compile_simd_f64x2_neg(AOTCompContext *comp_ctx, AOTFuncContext *func_ctx)
 
 static bool
 simd_float_intrinsic(AOTCompContext *comp_ctx, AOTFuncContext *func_ctx,
-                     LLVMTypeRef vector_type, const char *intrinsic)
+                     LLVMTypeRef vector_type, bool is_nan_indeterminate,
+                     const char *intrinsic)
 {
     LLVMValueRef vector, result;
     LLVMTypeRef param_types[1] = { vector_type };
@@ -112,76 +118,81 @@ simd_float_intrinsic(AOTCompContext *comp_ctx, AOTFuncContext *func_ctx,
         return false;
     }
 
+    if (comp_ctx->enable_nan_canonicalization && is_nan_indeterminate) {
+        result = aot_canonicalize_nan_simd(comp_ctx, func_ctx, result,
+                                           vector_type == V128_f32x4_TYPE);
+    }
+
     return simd_bitcast_and_push_v128(comp_ctx, func_ctx, result, "result");
 }
 
 bool
 aot_compile_simd_f32x4_abs(AOTCompContext *comp_ctx, AOTFuncContext *func_ctx)
 {
-    return simd_float_intrinsic(comp_ctx, func_ctx, V128_f32x4_TYPE,
+    return simd_float_intrinsic(comp_ctx, func_ctx, V128_f32x4_TYPE, false,
                                 "llvm.fabs.v4f32");
 }
 
 bool
 aot_compile_simd_f64x2_abs(AOTCompContext *comp_ctx, AOTFuncContext *func_ctx)
 {
-    return simd_float_intrinsic(comp_ctx, func_ctx, V128_f64x2_TYPE,
+    return simd_float_intrinsic(comp_ctx, func_ctx, V128_f64x2_TYPE, false,
                                 "llvm.fabs.v2f64");
 }
 
 bool
 aot_compile_simd_f32x4_sqrt(AOTCompContext *comp_ctx, AOTFuncContext *func_ctx)
 {
-    return simd_float_intrinsic(comp_ctx, func_ctx, V128_f32x4_TYPE,
+    return simd_float_intrinsic(comp_ctx, func_ctx, V128_f32x4_TYPE, true,
                                 "llvm.sqrt.v4f32");
 }
 
 bool
 aot_compile_simd_f64x2_sqrt(AOTCompContext *comp_ctx, AOTFuncContext *func_ctx)
 {
-    return simd_float_intrinsic(comp_ctx, func_ctx, V128_f64x2_TYPE,
+    return simd_float_intrinsic(comp_ctx, func_ctx, V128_f64x2_TYPE, true,
                                 "llvm.sqrt.v2f64");
 }
 
 bool
 aot_compile_simd_f32x4_ceil(AOTCompContext *comp_ctx, AOTFuncContext *func_ctx)
 {
-    return simd_float_intrinsic(comp_ctx, func_ctx, V128_f32x4_TYPE,
+    return simd_float_intrinsic(comp_ctx, func_ctx, V128_f32x4_TYPE, true,
                                 "llvm.ceil.v4f32");
 }
 
 bool
 aot_compile_simd_f64x2_ceil(AOTCompContext *comp_ctx, AOTFuncContext *func_ctx)
 {
-    return simd_float_intrinsic(comp_ctx, func_ctx, V128_f64x2_TYPE,
+    return simd_float_intrinsic(comp_ctx, func_ctx, V128_f64x2_TYPE, true,
                                 "llvm.ceil.v2f64");
 }
 
 bool
 aot_compile_simd_f32x4_floor(AOTCompContext *comp_ctx, AOTFuncContext *func_ctx)
 {
-    return simd_float_intrinsic(comp_ctx, func_ctx, V128_f32x4_TYPE,
+    return simd_float_intrinsic(comp_ctx, func_ctx, V128_f32x4_TYPE, true,
                                 "llvm.floor.v4f32");
 }
 
 bool
 aot_compile_simd_f64x2_floor(AOTCompContext *comp_ctx, AOTFuncContext *func_ctx)
 {
-    return simd_float_intrinsic(comp_ctx, func_ctx, V128_f64x2_TYPE,
+    return simd_float_intrinsic(comp_ctx, func_ctx, V128_f64x2_TYPE, true,
                                 "llvm.floor.v2f64");
 }
 
 bool
 aot_compile_simd_f32x4_trunc(AOTCompContext *comp_ctx, AOTFuncContext *func_ctx)
 {
-    return simd_float_intrinsic(comp_ctx, func_ctx, V128_f32x4_TYPE,
+    return simd_float_intrinsic(comp_ctx, func_ctx, V128_f32x4_TYPE, false,
                                 "llvm.trunc.v4f32");
 }
 
 bool
 aot_compile_simd_f64x2_trunc(AOTCompContext *comp_ctx, AOTFuncContext *func_ctx)
 {
-    return simd_float_intrinsic(comp_ctx, func_ctx, V128_f64x2_TYPE,
+    return simd_float_intrinsic(comp_ctx, func_ctx, V128_f64x2_TYPE, false,
                                 "llvm.trunc.v2f64");
 }
 
@@ -189,7 +200,7 @@ bool
 aot_compile_simd_f32x4_nearest(AOTCompContext *comp_ctx,
                                AOTFuncContext *func_ctx)
 {
-    return simd_float_intrinsic(comp_ctx, func_ctx, V128_f32x4_TYPE,
+    return simd_float_intrinsic(comp_ctx, func_ctx, V128_f32x4_TYPE, true,
                                 "llvm.rint.v4f32");
 }
 
@@ -197,7 +208,7 @@ bool
 aot_compile_simd_f64x2_nearest(AOTCompContext *comp_ctx,
                                AOTFuncContext *func_ctx)
 {
-    return simd_float_intrinsic(comp_ctx, func_ctx, V128_f64x2_TYPE,
+    return simd_float_intrinsic(comp_ctx, func_ctx, V128_f64x2_TYPE, true,
                                 "llvm.rint.v2f64");
 }
 
@@ -225,6 +236,11 @@ simd_float_cmp(AOTCompContext *comp_ctx, AOTFuncContext *func_ctx,
               LLVMBuildSelect(comp_ctx->builder, cmp, rhs, lhs, "selected"))) {
         HANDLE_FAILURE("LLVMBuildSelect");
         return false;
+    }
+
+    if (comp_ctx->enable_nan_canonicalization) {
+        selected = aot_canonicalize_nan_simd(comp_ctx, func_ctx, selected,
+                                             vector_type == V128_f32x4_TYPE);
     }
 
     return simd_bitcast_and_push_v128(comp_ctx, func_ctx, selected, "result");
@@ -488,6 +504,12 @@ aot_compile_simd_f64x2_demote(AOTCompContext *comp_ctx,
         return false;
     }
 
+    if (comp_ctx->enable_nan_canonicalization) {
+        /* Canonicalize newly created f32x4 NaN values */
+        result = aot_canonicalize_nan_simd(comp_ctx, func_ctx, result,
+                                           true);
+    }
+
     return simd_bitcast_and_push_v128(comp_ctx, func_ctx, result, "result");
 }
 
@@ -527,6 +549,12 @@ aot_compile_simd_f32x4_promote(AOTCompContext *comp_ctx,
                                         LLVM_CONST(i32_one), "new_vector_1"))) {
         HANDLE_FAILURE("LLVMBuildInsertElement");
         return false;
+    }
+
+    if (comp_ctx->enable_nan_canonicalization) {
+        /* Canonicalize newly created f64x2 NaN values */
+        result = aot_canonicalize_nan_simd(comp_ctx, func_ctx, result,
+                                           false);
     }
 
     return simd_bitcast_and_push_v128(comp_ctx, func_ctx, result, "result");

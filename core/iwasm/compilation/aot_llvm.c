@@ -11,6 +11,7 @@
 #include "../aot/aot_runtime.h"
 #include "../aot/aot_intrinsic.h"
 #include "../interpreter/wasm_runtime.h"
+#include "simd/simd_common.h"
 
 #if WASM_ENABLE_DEBUG_AOT != 0
 #include "debug/dwarf_extractor.h"
@@ -4112,6 +4113,39 @@ aot_canonicalize_nan(AOTCompContext *comp_ctx, AOTFuncContext *func_ctx, LLVMVal
 
     return final_val;
 }
+
+LLVMValueRef
+aot_canonicalize_nan_simd(AOTCompContext *comp_ctx, AOTFuncContext *func_ctx, LLVMValueRef vector_val, bool is_f32)
+{
+    // printf("canonicalize_nan_simd\n"); // Keep commented unless debugging
+
+    LLVMTypeRef vector_type = is_f32 ? V128_f32x4_TYPE : V128_f64x2_TYPE;
+    LLVMTypeRef elem_int_type = is_f32 ? I32_TYPE : I64_TYPE;
+    LLVMTypeRef elem_float_type = is_f32 ? F32_TYPE : F64_TYPE;
+    unsigned num_lanes = is_f32 ? 4 : 2;
+    unsigned long long nan_int_bits = comp_ctx->nan_canonicalization_sign_bit_negative
+        ? (is_f32 ? CANONICAL_NAN_NEGATIVE_F32 : CANONICAL_NAN_NEGATIVE_F64)
+        : (is_f32 ? CANONICAL_NAN_POSITIVE_F32 : CANONICAL_NAN_POSITIVE_F64);
+
+    LLVMValueRef is_nan_vec = LLVMBuildFCmp(comp_ctx->builder, LLVMRealUNO, vector_val, vector_val, "is_nan_vec");
+
+    /* Create a scalar constant float/double with the canonical NaN bit pattern */
+    LLVMValueRef nan_int_const = LLVMConstInt(elem_int_type, nan_int_bits, false);
+    LLVMValueRef nan_float_const = LLVMConstBitCast(nan_int_const, elem_float_type);
+
+    /* Create a vector by splatting the canonical NaN float constant */
+    LLVMValueRef undef_vec = LLVMGetUndef(vector_type);
+    LLVMValueRef canon_float_vec = undef_vec; // Start with undef
+    for (unsigned i = 0; i < num_lanes; ++i) {
+         LLVMValueRef idx = LLVMConstInt(I32_TYPE, i, false);
+         canon_float_vec = LLVMBuildInsertElement(comp_ctx->builder, canon_float_vec, nan_float_const, idx, "");
+    }
+
+    /* Use a select instruction to choose canon_float_vec if vector_val was NaN, otherwise leave vector_val unchanged */
+    LLVMValueRef final_vec = LLVMBuildSelect(comp_ctx->builder, is_nan_vec, canon_float_vec, vector_val, "final_vec");
+
+    return final_vec;
+}    
 
 bool
 aot_set_cond_br_weights(AOTCompContext *comp_ctx, LLVMValueRef cond_br,

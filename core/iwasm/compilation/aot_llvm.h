@@ -16,6 +16,7 @@
 #include "llvm-c/ExecutionEngine.h"
 #include "llvm-c/Analysis.h"
 #include "llvm-c/BitWriter.h"
+#include <stdbool.h>
 #if LLVM_VERSION_MAJOR < 17
 #include "llvm-c/Transforms/Utils.h"
 #include "llvm-c/Transforms/Scalar.h"
@@ -627,6 +628,9 @@ aot_canonicalize_nan_to_int(AOTCompContext *comp_ctx, AOTFuncContext *func_ctx, 
 
 LLVMValueRef
 aot_canonicalize_nan(AOTCompContext *comp_ctx, AOTFuncContext *func_ctx, LLVMValueRef value, bool is_f32);
+
+LLVMValueRef
+aot_canonicalize_nan_simd(AOTCompContext *comp_ctx, AOTFuncContext *func_ctx, LLVMValueRef vector_val, bool is_f32);
 
 bool
 aot_check_simd_compatibility(const char *arch_c_str, const char *cpu_c_str);
