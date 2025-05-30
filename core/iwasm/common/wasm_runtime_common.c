@@ -4673,15 +4673,19 @@ wasm_runtime_invoke_native_raw(WASMExecEnv *exec_env, void *func_ptr,
                 bh_memcpy_s(argv_dst, sizeof(uint64), argv_src,
                             sizeof(uint32) * 2);
                 argv_src += 2;
+#ifdef WASM_ENABLE_NAN_CANONICALIZATION
                 if (*(float64 *)argv_dst != *(float64 *)argv_dst) { // is Nan
-                    *(int64 *)argv_dst = CANONICAL_NAN_POSITIVE_F64;
+                    *(int64 *)argv_dst = CANONICAL_NAN_F64;
                 }
+#endif
                 break;
             case VALUE_TYPE_F32:
                 *(float32 *)argv_dst = *(float32 *)argv_src++;
+#ifdef WASM_ENABLE_NAN_CANONICALIZATION
                 if (*(float32 *)argv_dst != *(float32 *)argv_dst) { // is Nan
-                    *(int32 *)argv_dst = CANONICAL_NAN_POSITIVE_F32;
+                    *(int32 *)argv_dst = CANONICAL_NAN_F32;
                 }
+#endif
                 break;
 #if WASM_ENABLE_GC == 0 && WASM_ENABLE_REF_TYPES != 0
             case VALUE_TYPE_EXTERNREF:
