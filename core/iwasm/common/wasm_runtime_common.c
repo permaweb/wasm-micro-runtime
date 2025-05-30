@@ -2723,7 +2723,6 @@ parse_uint32_array_to_results(WASMFuncType *type, uint32 *argv,
                     out_results[i].of.i64 = CANONICAL_NAN_F64;
                 }
 #endif
-                }
                 break;
             }
             case VALUE_TYPE_V128:
