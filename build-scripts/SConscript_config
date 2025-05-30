@@ -128,6 +128,16 @@ if GetDepend(['WAMR_BUILD_REF_TYPES']):
     CPPDEFINES += ['WASM_ENABLE_REF_TYPES=1']
     print('[WAMR] enable ref types')
 
+if GetDepend(['WAMR_BUILD_NAN_CANONICALIZATION']):
+    CPPDEFINES += ['WASM_ENABLE_NAN_CANONICALIZATION=1']
+    print('[WAMR] NaN canonicalization enabled')
+    if GetDepend(['WAMR_BUILD_NAN_CANONICALIZATION_SIGN_BIT']):
+        CPPDEFINES += ['WASM_ENABLE_NAN_CANONICALIZATION_SIGN_BIT=1']
+        print('[WAMR] NaN canonicalization sign bit 1 (negative)')
+    else:
+        CPPDEFINES += ['WASM_ENABLE_NAN_CANONICALIZATION_SIGN_BIT=0']
+        print('[WAMR] NaN canonicalization sign bit 0 (positive)')
+
 CPPDEFINES += ['BH_MALLOC=wasm_runtime_malloc']
 CPPDEFINES += ['BH_FREE=wasm_runtime_free']
 

@@ -2665,11 +2665,24 @@ parse_args_to_uint32_array(WASMFuncType *type, wasm_val_t *args,
     }
 }
 
+#ifdef WASM_ENABLE_NAN_CANONICALIZATION
+
 // Canonical NaNs in WASM have their most significant bit set to 1
-static const unsigned long long CANONICAL_NAN_POSITIVE_F32 = 0x7FC00000;
-static const unsigned long long CANONICAL_NAN_POSITIVE_F64 = 0x7FF8000000000000ULL;
-static const unsigned long long CANONICAL_NAN_NEGATIVE_F32 = 0xFFC00000;
-static const unsigned long long CANONICAL_NAN_NEGATIVE_F64 = 0xFFF8000000000000ULL;
+#define CANONICAL_NAN_POSITIVE_F32 (0x7FC00000)
+#define CANONICAL_NAN_POSITIVE_F64 (0x7FF8000000000000ULL)
+#define CANONICAL_NAN_NEGATIVE_F32 (0xFFC00000)
+#define CANONICAL_NAN_NEGATIVE_F64 (0xFFF8000000000000ULL)
+
+// Conditionally set the canonical NaN based on the build flag
+#if WASM_ENABLE_NAN_CANONICALIZATION_SIGN_BIT == 1
+#define CANONICAL_NAN_F32 CANONICAL_NAN_NEGATIVE_F32
+#define CANONICAL_NAN_F64 CANONICAL_NAN_NEGATIVE_F64
+#else
+#define CANONICAL_NAN_F32 CANONICAL_NAN_POSITIVE_F32
+#define CANONICAL_NAN_F64 CANONICAL_NAN_POSITIVE_F64
+#endif
+
+#endif
 
 static void
 parse_uint32_array_to_results(WASMFuncType *type, uint32 *argv,
@@ -2704,9 +2717,11 @@ parse_uint32_array_to_results(WASMFuncType *type, uint32 *argv,
                 u.part = argv[p++];
                 out_results[i].kind = WASM_F32;
                 out_results[i].of.f32 = u.val;
+#ifdef WASM_ENABLE_NAN_CANONICALIZATION
                 if (u.val != u.val) { // is NaN
-                    out_results[i].of.i32 = CANONICAL_NAN_POSITIVE_F32;
+                    out_results[i].of.i32 = CANONICAL_NAN_F32;
                 }
+#endif
                 break;
             }
             case VALUE_TYPE_F64:
@@ -2719,8 +2734,11 @@ parse_uint32_array_to_results(WASMFuncType *type, uint32 *argv,
                 u.parts[1] = argv[p++];
                 out_results[i].kind = WASM_F64;
                 out_results[i].of.f64 = u.val;
+#ifdef WASM_ENABLE_NAN_CANONICALIZATION
                 if (u.val != u.val) { // is NaN
-                    out_results[i].of.i64 = CANONICAL_NAN_POSITIVE_F64;
+                    out_results[i].of.i64 = CANONICAL_NAN_F64;
+                }
+#endif
                 }
                 break;
             }
