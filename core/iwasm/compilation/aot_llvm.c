@@ -12,6 +12,7 @@
 #include "../aot/aot_intrinsic.h"
 #include "../interpreter/wasm_runtime.h"
 #include "simd/simd_common.h"
+#include "../common/nan_canonicalization.h"
 
 #if WASM_ENABLE_DEBUG_AOT != 0
 #include "debug/dwarf_extractor.h"
@@ -4058,12 +4059,6 @@ aot_load_const_from_table(AOTCompContext *comp_ctx, LLVMValueRef base,
     (void)const_type;
     return const_value;
 }
-
-// Canonical NaNs in WASM have their most significant bit set to 1
-static const unsigned long long CANONICAL_NAN_POSITIVE_F32 = 0x7FC00000;
-static const unsigned long long CANONICAL_NAN_POSITIVE_F64 = 0x7FF8000000000000ULL;
-static const unsigned long long CANONICAL_NAN_NEGATIVE_F32 = 0xFFC00000;
-static const unsigned long long CANONICAL_NAN_NEGATIVE_F64 = 0xFFF8000000000000ULL;
 
 LLVMValueRef
 aot_canonicalize_nan_to_int(AOTCompContext *comp_ctx, AOTFuncContext *func_ctx, LLVMValueRef float_val, bool is_f32)

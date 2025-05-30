@@ -39,6 +39,9 @@
 #endif
 #include "../common/wasm_c_api_internal.h"
 #include "../../version.h"
+#if WASM_ENABLE_NAN_CANONICALIZATION != 0
+#include "nan_canonicalization.h"
+#endif
 
 /**
  * For runtime build, BH_MALLOC/BH_FREE should be defined as
@@ -2664,25 +2667,6 @@ parse_args_to_uint32_array(WASMFuncType *type, wasm_val_t *args,
         }
     }
 }
-
-#ifdef WASM_ENABLE_NAN_CANONICALIZATION
-
-// Canonical NaNs in WASM have their most significant bit set to 1
-#define CANONICAL_NAN_POSITIVE_F32 (0x7FC00000)
-#define CANONICAL_NAN_POSITIVE_F64 (0x7FF8000000000000ULL)
-#define CANONICAL_NAN_NEGATIVE_F32 (0xFFC00000)
-#define CANONICAL_NAN_NEGATIVE_F64 (0xFFF8000000000000ULL)
-
-// Conditionally set the canonical NaN based on the build flag
-#if WASM_ENABLE_NAN_CANONICALIZATION_SIGN_BIT == 1
-#define CANONICAL_NAN_F32 CANONICAL_NAN_NEGATIVE_F32
-#define CANONICAL_NAN_F64 CANONICAL_NAN_NEGATIVE_F64
-#else
-#define CANONICAL_NAN_F32 CANONICAL_NAN_POSITIVE_F32
-#define CANONICAL_NAN_F64 CANONICAL_NAN_POSITIVE_F64
-#endif
-
-#endif
 
 static void
 parse_uint32_array_to_results(WASMFuncType *type, uint32 *argv,
