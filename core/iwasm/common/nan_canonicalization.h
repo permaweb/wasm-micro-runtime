@@ -1,8 +1,6 @@
 #ifndef _NAN_CANONICALIZATION_H
 #define _NAN_CANONICALIZATION_H
 
-#include <math.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
