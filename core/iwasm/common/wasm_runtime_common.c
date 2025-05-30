@@ -2701,7 +2701,7 @@ parse_uint32_array_to_results(WASMFuncType *type, uint32 *argv,
                 u.part = argv[p++];
                 out_results[i].kind = WASM_F32;
                 out_results[i].of.f32 = u.val;
-#ifdef WASM_ENABLE_NAN_CANONICALIZATION
+#if WASM_ENABLE_NAN_CANONICALIZATION != 0
                 if (u.val != u.val) { // is NaN
                     out_results[i].of.i32 = CANONICAL_NAN_F32;
                 }
@@ -2718,7 +2718,7 @@ parse_uint32_array_to_results(WASMFuncType *type, uint32 *argv,
                 u.parts[1] = argv[p++];
                 out_results[i].kind = WASM_F64;
                 out_results[i].of.f64 = u.val;
-#ifdef WASM_ENABLE_NAN_CANONICALIZATION
+#if WASM_ENABLE_NAN_CANONICALIZATION != 0
                 if (u.val != u.val) { // is NaN
                     out_results[i].of.i64 = CANONICAL_NAN_F64;
                 }
@@ -4656,7 +4656,7 @@ wasm_runtime_invoke_native_raw(WASMExecEnv *exec_env, void *func_ptr,
                 bh_memcpy_s(argv_dst, sizeof(uint64), argv_src,
                             sizeof(uint32) * 2);
                 argv_src += 2;
-#ifdef WASM_ENABLE_NAN_CANONICALIZATION
+#if WASM_ENABLE_NAN_CANONICALIZATION != 0
                 if (*(float64 *)argv_dst != *(float64 *)argv_dst) { // is Nan
                     *(int64 *)argv_dst = CANONICAL_NAN_F64;
                 }
@@ -4664,7 +4664,7 @@ wasm_runtime_invoke_native_raw(WASMExecEnv *exec_env, void *func_ptr,
                 break;
             case VALUE_TYPE_F32:
                 *(float32 *)argv_dst = *(float32 *)argv_src++;
-#ifdef WASM_ENABLE_NAN_CANONICALIZATION
+#if WASM_ENABLE_NAN_CANONICALIZATION != 0
                 if (*(float32 *)argv_dst != *(float32 *)argv_dst) { // is Nan
                     *(int32 *)argv_dst = CANONICAL_NAN_F32;
                 }
