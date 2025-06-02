@@ -4072,8 +4072,8 @@ aot_canonicalize_nan_to_int(AOTCompContext *comp_ctx, AOTFuncContext *func_ctx, 
        The comparison 'ret' with itself using LLVMRealUNO returns true if ret is NaN. */
     LLVMValueRef is_nan = LLVMBuildFCmp(comp_ctx->builder, LLVMRealUNO, float_val, float_val, "is_nan");
 
-    /* Cast the float to an int directly */
-    LLVMValueRef float_as_int = LLVMBuildFPToSI(comp_ctx->builder, float_val, int_type, "float_as_int");
+    /* Bitcast the float to an int */
+    LLVMValueRef float_as_int = LLVMBuildBitCast(comp_ctx->builder, float_val, int_type, "float_as_int");
 
     /* Create a Canonical NaN from raw bits */
     LLVMValueRef canon_int = LLVMConstInt(int_type, nan_bits, 0);
